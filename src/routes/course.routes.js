@@ -7,10 +7,7 @@ const courseRoutes = Router();
 
 courseRoutes.use(express.json());
 
-courseRoutes.post("/signup");
-courseRoutes.post("/login");
-courseRoutes.post("/course");
-courseRoutes.post("/purchase");
-courseRoutes.post("/myCourse");
-
+adminRoutes.post("/login",(req,res)=>{
+  res.send("Login Route");
+});
 export default courseRoutes;

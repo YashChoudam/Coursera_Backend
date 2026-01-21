@@ -12,8 +12,8 @@ userRoutes.post("/signup", async (req, res) => {
   const { email, password, name } = req.body;
 
   try {
-    const salt = bcrypt.genSalt(12);
-    const hashedPassword = bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
     await userModel.create({
       email: email,
       password: hashedPassword,
@@ -28,9 +28,17 @@ userRoutes.post("/signup", async (req, res) => {
   }
 });
 
-userRoutes.post("/login");
-userRoutes.post("/course");
-userRoutes.post("/purchase");
-userRoutes.post("/myCourse");
+userRoutes.post("/login",(req,res)=>{
+  res.send("Login Route");
+});
+userRoutes.post("/course",(req,res)=>{
+  res.send("Course Route");
+});
+userRoutes.post("/purchase",(req,res)=>{
+  res.send("Course Purchase route");
+});
+userRoutes.post("/myCourse",(req,res)=>{
+  res.send("myCourse Route")
+});
 
 export default userRoutes;
