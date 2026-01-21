@@ -18,8 +18,8 @@ const app = express();
 const port = process.env.PORT;
 
 app.use("/api/v1/user", userRoutes);
-// app.use("/api/v1/admin", adminRoutes);
-// app.use("/api/v1/cousrse", courseRoutes);
+app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/cousrse", courseRoutes);
 // app.use("/api/v1/purchase",purchaseRoutes);
 
 connectDB()

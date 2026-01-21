@@ -28,17 +28,38 @@ userRoutes.post("/signup", async (req, res) => {
   }
 });
 
-userRoutes.post("/login",(req,res)=>{
-  res.send("Login Route");
+userRoutes.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  const response = await userModel.findOne({
+    email: email,
+  });
+
+  if (!response) {
+    return res.json({ message: "User does not exist with this email" });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, response.password);
+  if (passwordMatch) {
+    const token = jwt.sign(
+      {
+        id: response._id,
+        email: response.email,
+      },
+      process.env.JWT_SECRET,
+    );
+    res.json({ token });
+  } else {
+    res.send({ message: "Incorrect credentials " });
+  }
 });
-userRoutes.post("/course",(req,res)=>{
+userRoutes.post("/course", (req, res) => {
   res.send("Course Route");
 });
-userRoutes.post("/purchase",(req,res)=>{
+userRoutes.post("/purchase", (req, res) => {
   res.send("Course Purchase route");
 });
-userRoutes.post("/myCourse",(req,res)=>{
-  res.send("myCourse Route")
+userRoutes.post("/myCourse", (req, res) => {
+  res.send("myCourse Route");
 });
 
 export default userRoutes;
