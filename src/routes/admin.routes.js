@@ -2,7 +2,9 @@ import { Router } from "express";
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import userModel from "../models/user.models.js";
+import adminModels from "../models/admin.models.js";
+import authAdmin from "../middlewares/admin.middleware.js";
+// import adminModels from "../models/admin.models.js";
 
 const adminRoutes = Router();
 
@@ -13,7 +15,7 @@ adminRoutes.post("/signup", async (req, res) => {
   try {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
-    await userModel.create({
+    await adminModels.create({
       email: email,
       password: hashedPassword,
       name: name,
@@ -29,7 +31,7 @@ adminRoutes.post("/signup", async (req, res) => {
 
 adminRoutes.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const response = await userModel.findOne({
+  const response = await adminModels.findOne({
     email: email,
   });
 
@@ -67,47 +69,101 @@ adminRoutes.get("/course", async (req, res) => {
   }
 });
 
-adminRoutes.post("/purchase", authUser, async (req, res) => {
-    try {
-        const {courseId} = req.body ;
-        const userId = req.user.id ; // came from authUser 
+adminRoutes.post("/deletedCourse", authAdmin, async (req, res) => {
+  const { title, description, price, imageUrl } = req.body;
 
-        const user = await userModel.findById(userId);
-        if (!user) {
-            return res.status(404).send({message: "User not found"});
-        }
+  try {
+    const deletedCourse = await courseModel.create({
+      title: title,
+      description: description,
+      price: price,
+      imageUrl: imageUrl,
+      creatorId: req.admin.id,
+    });
 
-        // Add course if not purchased
-        if (!user.purchasedCourses.includes(courseId)) {
-            user.purchasedCourses.push(courseId);
-            await user.save();
-        }
-        res.json({ success: true, message: "Course purchased successfully" });
-    } catch (error) {
-        res.status(500).json({success: false , message : "Error purchasing the course "});
-    }
+    return res.status(201).json({
+      message: "Course created successfully",
+      courseId: deletedCourse._id,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Course creation failed" });
+  }
 });
 
-adminRoutes.get("/myCourse", authUser,async (req, res) => {
-    try {
-        const userId = req.user.id ;
-        const user = await userModel.findById(userId).populate("purchasedCourses");
+adminRoutes.put("/deletedCourse/modify", authAdmin, async (req, res) => {
+  const { oldTitle, title, description, price, imageUrl } = req.body;
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.json({
-            success: true,
-            myCourses: user.purchasedCourses
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error fetching purchased courses"
-        });
+  try {
+    const updatedCourse = await courseModel.findOneAndUpdate(
+      {
+        title: oldTitle,
+        creatorId: req.admin.id, // Ensure only original admin can modify
+      },
+      {
+        title,
+        description,
+        price,
+        imageUrl,
+      },
+      { new: true },
+    );
+
+    if (!updatedCourse) {
+      return res
+        .status(404)
+        .json({ message: "Course not found or unauthorized" });
     }
+
+    return res.status(200).json({
+      message: "Course updated successfully",
+      updatedCourse,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error editing the deletedCourse" });
+  }
+});
+adminRoutes.get("/deletedCourse/bulk", authAdmin, async (req, res) => {
+  const adminId = req.admin.id;
+
+  try {
+    const courses = await courseModel.find({ creatorId: adminId });
+
+    if (courses.length === 0) {
+      return res.status(404).json({ message: "No courses found" });
+    }
+
+    return res.status(200).json({
+      message: "Courses fetched successfully",
+      courses,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Error finding the courses", error: error.message });
+  }
 });
 
+adminRoutes.delete("/course", authAdmin, async (req, res) => {
+  const courseTitle = req.body.title;
 
+  try {
+    const deletedCourse = await courseModel.findOneAndDelete({
+      title: courseTitle,
+      creatorId: req.admin.id,
+    });
+    if (!deletedCourse) {
+      return res
+        .status(403)
+        .send({ message: "There is no course with this title " });
+    }
+    return res.status(200).json({
+      message: "Course deleted successfully",
+      deletedCourse: deletedCourse,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ message: "Error deleting the server ", error });
+  }
+});
 export default adminRoutes;
-

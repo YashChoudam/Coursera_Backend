@@ -3,6 +3,7 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.models.js";
+import authUser from "../middlewares/user.middleware.js"
 
 const userRoutes = Router();
 
